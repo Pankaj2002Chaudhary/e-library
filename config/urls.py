@@ -53,6 +53,9 @@ urlpatterns = [
         "api/ai/",
         include("ai_summary.urls")
     ),
-    
+    path(
+        "api/reviews/",
+        include("reviews.urls")
+    ),
 
 ]
