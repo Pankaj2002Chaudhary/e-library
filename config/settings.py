@@ -11,9 +11,12 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
 
+env = environ.Env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+environ.Env.read_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,6 +31,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 AUTH_USER_MODEL = "accounts.User"
 
+AI_API_TOKEN = env("AI_API_TOKEN")
 # Application definition
 
 INSTALLED_APPS = [
@@ -64,6 +68,23 @@ REST_FRAMEWORK = {
 
     "DEFAULT_SCHEMA_CLASS":
         "drf_spectacular.openapi.AutoSchema",
+}
+
+CACHES = {
+    "default": {
+        "BACKEND":
+        "django_redis.cache.RedisCache",
+
+        "LOCATION":
+        "redis://127.0.0.1:6379/1",
+
+        "OPTIONS": {
+            "CLIENT_CLASS":
+            "django_redis.client.DefaultClient",
+            # Summary generation must remain available when Redis is offline.
+            "IGNORE_EXCEPTIONS": True,
+        }
+    }
 }
 
 SPECTACULAR_SETTINGS = {

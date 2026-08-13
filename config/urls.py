@@ -48,6 +48,11 @@ urlpatterns = [
         "api/borrowings/",
         include("borrowings.urls")
     ),
+    # AI Summary APIs
+    path(
+        "api/ai/",
+        include("ai_summary.urls")
+    ),
     
 
 ]
