@@ -43,6 +43,11 @@ urlpatterns = [
         "api/",
         include("books.urls")
     ),
+    # Borrowing APIs
+    path(
+        "api/borrowings/",
+        include("borrowings.urls")
+    ),
     
 
 ]
