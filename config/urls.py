@@ -39,6 +39,10 @@ urlpatterns = [
         "api/auth/refresh/",
         TokenRefreshView.as_view()
     ),
+    path(
+        "api/",
+        include("books.urls")
+    ),
     
 
 ]
