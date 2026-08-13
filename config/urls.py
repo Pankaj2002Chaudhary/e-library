@@ -29,4 +29,16 @@ urlpatterns = [
         "api/auth/",
         include("accounts.urls")
     ),
+
+    path(
+        "api/auth/login/",
+        TokenObtainPairView.as_view()
+    ),
+
+    path(
+        "api/auth/refresh/",
+        TokenRefreshView.as_view()
+    ),
+    
+
 ]
