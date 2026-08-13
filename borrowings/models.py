@@ -8,7 +8,7 @@ from books.models import Book
 
 class BorrowRecord(models.Model):
     """
-    Tracks book borrowing activity.
+    Stores borrowing history and book access records.
     """
 
     class Status(models.TextChoices):
@@ -16,22 +16,23 @@ class BorrowRecord(models.Model):
         RETURNED = "RETURNED", "Returned"
         OVERDUE = "OVERDUE", "Overdue"
 
+    # User who borrowed the book
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="borrow_records"
     )
 
+    # Borrowed book
     book = models.ForeignKey(
         Book,
         on_delete=models.CASCADE,
         related_name="borrow_records"
     )
 
-    borrowed_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    borrowed_at = models.DateTimeField(auto_now_add=True)
 
+    # Expected return date
     due_date = models.DateTimeField()
 
     returned_at = models.DateTimeField(
@@ -47,6 +48,7 @@ class BorrowRecord(models.Model):
 
     def save(self, *args, **kwargs):
 
+        # Set default borrowing period
         if not self.pk:
             self.due_date = timezone.now() + timedelta(days=14)
 
