@@ -77,6 +77,23 @@ Beyond the reader experience, the platform provides librarians and administrator
 - **Personalized Recommendation Engine** - readers receive suggestions based on borrowing history, related-reader behaviour, and current library popularity.
 
 
+## Code Structure & Maintainability
+
+The project is designed with a strong focus on modularity, maintainability, and separation of concerns. Each core business domain is implemented as an independent Django application, allowing features to evolve without impacting unrelated parts of the system.
+
+Key architectural principles followed throughout the project include:
+
+- **Modular Design** — functionality is organized into dedicated apps such as Accounts, Books, Borrowings, Reviews, AI Services, Recommendations, and Analytics.
+- **Separation of Concerns** — business logic is isolated from API views through reusable service layers and utility modules.
+- **Reusable Components** — serializers, permissions, validators, and services are designed to be reused across multiple endpoints.
+- **Role-Based Access Control** — authorization rules are centralized to ensure consistent and secure access management.
+- **Scalable Architecture** — new features can be added with minimal changes to existing modules.
+- **Performance-Oriented Design** — Redis caching is used to reduce redundant AI requests and improve response times.
+- **Maintainable Codebase** — clear project structure, consistent coding standards, meaningful naming conventions, and comprehensive documentation improve long-term maintainability.
+
+This approach ensures that the system remains easy to understand, extend, test, and maintain as the application grows.
+
+
 ## API endpoints
 
 ### Accounts
