@@ -36,6 +36,17 @@ AUTH_USER_MODEL = "accounts.User"
 AI_API_TOKEN = env("AI_API_TOKEN")
 # Application definition
 
+from datetime import timedelta
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
