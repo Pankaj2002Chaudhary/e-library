@@ -1,32 +1,46 @@
 # E-Library Management System
 
-E-Library is a thoughtfully designed REST API for a modern library. It gives readers a simple way to discover books, borrow available copies, share reviews, and get AI-powered reading support. It also gives library teams the controls and insight they need to manage a catalogue with confidence.
+E-Library Management System is a modern, AI-enhanced backend platform that bridges traditional library management with intelligent digital experiences. The platform empowers readers to explore books, manage borrowing activities, write reviews, generate AI-powered summaries, and discover new books through personalized recommendations. Simultaneously, it equips librarians and administrators with robust catalogue management, inventory control, analytics, and reporting capabilities, enabling efficient and data-driven library operations.
 
-Built with Django and Django REST Framework, the project focuses on the details that make an API dependable in the real world: clear access rules, protected inventory updates, useful validation, reusable business logic, caching, and test coverage.
+
+## Tech Stack
+
+| Category | Technologies |
+|-----------|-------------|
+| **Backend** | Python, Django, Django REST Framework (DRF) |
+| **Database** | PostgreSQL |
+| **Authentication** | JWT, Simple JWT |
+| **AI Integration** | UserFacet AI API, Requests |
+| **Caching** | Redis, django-redis |
+| **API Testing** | Postman |
+| **Version Control** | Git, GitHub |
+| **Architecture** | Service Layer Architecture, RESTful APIs, Role-Based Access Control (RBAC) |
+| **Development Environment** | Virtual Environment (venv) |
+
+
+### AI-Assisted Development
+
+During development, AI tools were used for implementation assistance, testing support, bug fixing, code reviews, and architecture/design discussions.
+
+- **OpenAI Codex**
+- **ChatGPT**
+- **Claude**
+
 
 ## What this project delivers
 
-- **Easy account access** — register with an email address and use JWT tokens to securely access private features.
-- **Smart catalogue browsing** — search by title, author, or ISBN; filter, sort, and paginate results.
-- **Library inventory management** — staff can add, edit, and remove books while the API protects copy-count consistency.
-- **Safe borrowing workflow** — users can borrow and return books, with a 14-day due date and a private borrowing history.
-- **Reader feedback** — supports one review and rating per user per book, ensuring authentic feedback while maintaining accurate, automatically updated aggregate ratings.
-- **AI reading assistance** — integrates AI to generate multiple summary formats (short and detailed) and assist readers in crafting professional-quality reviews from simple notes and impressions.
-- **Useful library analytics** — staff can see dashboard totals, popular books, top-rated books, active readers, and genre distribution.
+- **Secure user authentication** — register with an email address and use JWT tokens to securely access private features.
+- **Advanced book discovery** — search by title, author, or ISBN; filter, sort, and paginate results.
+- **Robust catalogue management** — librarians and administrators can create, update, and manage books while ensuring inventory accuracy through automatic copy tracking.
+- **Reliable borrowing system** — users can borrow and return books, with a 14-day due date and a private borrowing history.
+- **Copyright-Aware Access Control** — the platform follows a borrowing-based model that limits access according to available copies, mirroring real-world library operations. This prevents a single licensed copy from being simultaneously accessed by unlimited users, helping protect author and publisher rights while promoting fair content distribution.
+- **Book Ratings** — readers can rate books on a 1–5 scale and automatically update aggregate ratings.
+- **AI-Assisted Review Generation** — readers can provide simple notes, thoughts, or impressions about a book, and AI transforms them into polished, well-structured, professional-quality reviews.
+- **AI-Powered Book Summaries** — integrates AI to generate multiple summary formats (short and detailed) of the book.
+- **Redis-Based Summary Caching** — previously generated summaries are cached and reused, preventing duplicate AI requests, reducing token consumption, and delivering significantly faster response times.
+- **Analytics & Insights Dashboard** — staff can see dashboard totals, popular books, top-rated books, active readers, and genre distribution.
 
-- **Personalised discovery** - readers receive suggestions based on borrowing history, related-reader behaviour, and current library popularity.
-
-## Why it is structured this way
-
-The codebase is organised by business area instead of placing all logic in one application. Each domain—accounts, books, borrowing, reviews, AI summaries, and analytics—owns its models, API views, validation, and tests. This keeps the code easy to understand today and practical to extend tomorrow.
-
-```text
-Client -> API route -> Authentication and role check -> View
-       -> Validation / business service -> Database or external service -> JSON response
-```
-
-For example, borrowing uses a database transaction and row lock so two people cannot accidentally claim the same final copy at once. AI summaries are stored permanently in the database and cached in Redis, which keeps repeat requests fast while avoiding unnecessary AI calls.
-
+- **Personalized Recommendation Engine** - readers receive suggestions based on borrowing history, related-reader behaviour, and current library popularity.
 
 
 ## API endpoints
