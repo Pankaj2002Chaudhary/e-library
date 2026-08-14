@@ -1,6 +1,8 @@
 # E-Library Management System
 
-E-Library Management System is a modern, AI-enhanced backend platform that bridges traditional library management with intelligent digital experiences. The platform empowers readers to explore books, manage borrowing activities, write reviews, generate AI-powered summaries, and discover new books through personalized recommendations. Simultaneously, it equips librarians and administrators with robust catalogue management, inventory control, analytics, and reporting capabilities, enabling efficient and data-driven library operations.
+**E-Library Management System** is a modern, AI-powered digital library platform designed to enhance the way readers discover, understand, and engage with books. The system enables users to explore a rich catalogue of titles, access books through a controlled borrowing model, rate books, generate AI-powered summaries, create AI-assisted reviews, and discover relevant content through personalized recommendations.
+
+Beyond the reader experience, the platform provides librarians and administrators with comprehensive tools for catalogue management, digital inventory control, user activity monitoring, analytics, and operational insights. By combining traditional library workflows with AI-driven features and data-driven decision making, E-Library delivers an intelligent, scalable, and engaging digital reading ecosystem.
 
 
 ## Tech Stack
@@ -17,23 +19,55 @@ E-Library Management System is a modern, AI-enhanced backend platform that bridg
 | **Architecture** | Service Layer Architecture, RESTful APIs, Role-Based Access Control (RBAC) |
 | **Development Environment** | Virtual Environment (venv) |
 
+## Architecture Overview
 
-### AI-Assisted Development
+```text
+                          ┌─────────────────────┐
+                          │       Client        │
+                          │ Postman / Frontend  │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────┐
+                        │ Django REST Framework  │
+                        │      REST APIs         │
+                        └──────────┬─────────────┘
+                                   │
+      ┌────────────┬───────────────┼───────────────┬─────────────┬──────────────┐
+      ▼            ▼               ▼               ▼             ▼              ▼
+ ┌────────┐   ┌────────┐     ┌────────────┐   ┌────────┐   ┌────────────┐ ┌──────────┐
+ │Accounts│   │ Books  │     │Borrowings │   │Reviews │   │Analytics   │ │Recommend.│
+ └────────┘   └────────┘     └────────────┘   └────────┘   └────────────┘ └──────────┘
+      │            │               │               │             │              │
+      └────────────┴───────────────┴───────────────┴─────────────┴──────────────┘
+                                   │
+                                   ▼
+                           ┌──────────────┐
+                           │ PostgreSQL   │
+                           │   Database   │
+                           └──────┬───────┘
+                                  │
+                 ┌────────────────┴────────────────┐
+                 ▼                                 ▼
+        ┌─────────────────┐              ┌─────────────────┐
+        │  AI Summary &   │              │  Redis Cache    │
+        │ Review Services │              │ (AI Responses)  │
+        └────────┬────────┘              └─────────────────┘
+                 │
+                 ▼
+       ┌───────────────────────┐
+       │  UserFacet AI API     │
+       └───────────────────────┘
+```
 
-During development, AI tools were used for implementation assistance, testing support, bug fixing, code reviews, and architecture/design discussions.
 
-- **OpenAI Codex**
-- **ChatGPT**
-- **Claude**
-
-
-## What this project delivers
+## Implemented Features
 
 - **Secure user authentication** — register with an email address and use JWT tokens to securely access private features.
 - **Advanced book discovery** — search by title, author, or ISBN; filter, sort, and paginate results.
 - **Robust catalogue management** — librarians and administrators can create, update, and manage books while ensuring inventory accuracy through automatic copy tracking.
 - **Reliable borrowing system** — users can borrow and return books, with a 14-day due date and a private borrowing history.
-- **Copyright-Aware Access Control** — the platform follows a borrowing-based model that limits access according to available copies, mirroring real-world library operations. This prevents a single licensed copy from being simultaneously accessed by unlimited users, helping protect author and publisher rights while promoting fair content distribution.
+- **Controlled inventory access** — borrowing is limited by available copies, mirroring real-world library circulation and preventing the same limited copy from being borrowed concurrently.
 - **Book Ratings** — readers can rate books on a 1–5 scale and automatically update aggregate ratings.
 - **AI-Assisted Review Generation** — readers can provide simple notes, thoughts, or impressions about a book, and AI transforms them into polished, well-structured, professional-quality reviews.
 - **AI-Powered Book Summaries** — integrates AI to generate multiple summary formats (short and detailed) of the book.
@@ -66,12 +100,18 @@ During development, AI tools were used for implementation assistance, testing su
 - `POST /api/borrowings/return/<book_id>/` - Return your currently borrowed book.
 - `GET /api/borrowings/history/` - View your complete borrowing history.
 
-### Reviews and AI
+### Reviews
 
 - `POST /api/reviews/create/` - Publish your rating and written review.
 - `GET /api/reviews/book/<book_id>/` - Read public reviews for one book.
 - `POST /api/reviews/ai-review/<book_id>/` - Generate an AI-assisted review draft.
-- `POST /api/ai/generate/<book_id>/` - Generate or retrieve AI book summary.
+
+### AI summaries
+
+- `POST /api/ai/generate/<book_id>/?type=short` - Generate or retrieve short summary.
+- `POST /api/ai/generate/<book_id>/?type=detailed` - Generate or retrieve detailed summary.
+
+The `type` parameter accepts `short` or `detailed`; it defaults to `short`. The first successful request returns `cached: false`. Repeat requests return the persisted summary with `cached: true` when available.
 
 ### Analytics
 
@@ -87,69 +127,157 @@ During development, AI tools were used for implementation assistance, testing su
 - `GET /api/recommendations/also-borrowed/<book_id>/` - Discover books similar readers borrowed.
 - `GET /api/recommendations/trending/` - Browse currently popular library books.
 
-## Quick start
+## Setup Instructions
 
-### 1. Create and activate a virtual environment
+### 1. Clone the repository and create a virtual environment
 
 ```bash
 git clone <repository-url>
 cd e-library
+
 python -m venv venv
 ```
 
-Windows PowerShell:
+**Windows (PowerShell)**
 
 ```powershell
 .\venv\Scripts\Activate.ps1
 ```
 
-macOS/Linux:
+**macOS/Linux**
 
 ```bash
 source venv/bin/activate
 ```
 
-### 2. Install packages and configure the AI token
+---
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
+---
+
+### 3. Configure environment variables
+
 Create a `.env` file in the project root:
 
 ```env
+# PostgreSQL Configuration
+DATABASE_URL=postgresql://postgres:your_password@127.0.0.1:5432/e_library
+
+# UserFacet AI API
 AI_API_TOKEN=your-userfacet-api-token
+
+# Redis is configured for redis://127.0.0.1:6379/1
 ```
 
-### 3. Prepare the database and start the API
+The application reads `DATABASE_URL`. If it is omitted, Django falls back to the local `db.sqlite3` file. Redis is configured at `redis://127.0.0.1:6379/1`; cache failures are ignored so the API remains usable.
+
+URL-encode special characters in PostgreSQL passwords. For example, `@` becomes `%40` inside `DATABASE_URL`.
+
+---
+
+### 4. Create the PostgreSQL database
+
+```sql
+CREATE DATABASE e_library;
+```
+
+---
+
+### 5. Apply database migrations
 
 ```bash
 python manage.py migrate
+```
+
+To add repeatable local demo data for Postman testing:
+
+```bash
+python manage.py seed_demo_data
+```
+
+---
+
+### 6. Create an administrator account
+
+```bash
 python manage.py createsuperuser
+```
+
+---
+
+### 7. Start the development server
+
+```bash
 python manage.py runserver
 ```
 
-The API starts at `http://127.0.0.1:8000/`.
+The API will be available at:
 
-Redis at `127.0.0.1:6379` is recommended for AI-summary caching. The application still works if Redis is temporarily unavailable; it simply skips the cache.
+```text
+http://127.0.0.1:8000/
+```
 
-### 4. Verify the project
+---
+
+### 8. Configure Redis (Recommended)
+
+Redis is used for caching AI-generated summaries to reduce API calls, improve response times, and optimize token usage.
+
+Default Redis endpoint:
+
+```text
+127.0.0.1:6379
+```
+
+If Redis is unavailable, the application will continue to function normally, but AI-generated summaries will not be cached.
+
+---
+
+### 9. Verify the project
 
 ```bash
 python manage.py check
 python manage.py test
 ```
 
-## Technology
 
-Python, Django, Django REST Framework, Simple JWT, SQLite, Redis, `django-filter`, `drf-spectacular`, and the UserFacet AI API.
 
-## Important assumptions
+## Important Assumptions
 
 - `available_copies` represents physical copies or concurrent e-book licences and can never be greater than `total_copies`.
-- Every borrow is given a 14-day due date. The `OVERDUE` status is ready in the data model, but automatically marking overdue records is a planned scheduled-job feature.
-- SQLite is the local development database. PostgreSQL, managed Redis, HTTPS, secret management, and production Django settings should be used for a public deployment.
-- The current registration API accepts a requested role. In a public product, privileged roles should only be assigned by an authorised administrator.
+
+- Every borrow is assigned a 14-day due date. Automatic overdue detection and status updates are planned as a future enhancement and are not currently enforced by a background scheduler.
+
+- The registration API currently accepts a user role for demonstration and testing purposes.
+
+- In a production environment, privileged roles such as Librarian and Administrator would only be assigned by an authorized Administrator through protected management endpoints.
+
+- AI-generated summaries and review drafts are intended to assist readers and may not perfectly reflect the original book content. Users should treat AI output as supplementary information.
+
+- AI-generated summaries are cached using Redis to improve performance, reduce response times, and avoid unnecessary repeated API calls for the same book and summary type.
+
+- Recommendation results are generated from available borrowing activity and user interactions. Recommendation quality is expected to improve as the library accumulates more usage data.
+
+- Borrowing and return operations are protected using database transactions, ensuring accurate inventory tracking and preventing inconsistent copy counts during concurrent requests.
+
+- Analytics and reporting endpoints are based on transactional library data available at the time of the request and are intended for operational insights rather than formal business reporting.
+
+- The system assumes that book metadata (title, author, ISBN, description, etc.) is entered and maintained accurately by librarians or administrators.
+
+
+### AI-Assisted Development
+
+During development, AI tools were used for implementation assistance, testing support, bug fixing, code reviews, and architecture/design discussions.
+
+- **OpenAI Codex**
+- **ChatGPT**
+- **Claude**
+
 
 ## Documentation
 
