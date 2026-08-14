@@ -10,6 +10,10 @@ env/
 
 # Environment variables
 .env
+.env.postgres
+
+# Local database-migration fixtures
+.migration/
 
 # Database
 db.sqlite3
