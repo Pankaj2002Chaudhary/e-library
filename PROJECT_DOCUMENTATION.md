@@ -25,6 +25,7 @@ The project is API-first. A web, mobile, or desktop client can use the same pred
 | AI summaries | Gives quick or deeper reading support without repeated provider calls |
 | AI review draft | Helps a reader turn their own notes and rating into a draft review |
 | Analytics | Gives staff concise, reliable collection and usage information |
+| Recommendations | Helps readers discover personalised, related, and trending books |
 
 ## 3. Technology and architecture
 
@@ -50,6 +51,7 @@ borrowings/    Borrow, return, and history
 reviews/       Ratings, written reviews, AI review drafts
 ai_summary/    Generated summaries, cache, generation state
 analytics/     Library operational reporting
+recommendations/ Personalised, collaborative, and trending discovery
 ```
 
 ### Request lifecycle
@@ -73,6 +75,7 @@ This separation is intentional. Views are responsible for HTTP concerns, seriali
 - The AI provider is called outside a database transaction, so a slow external request does not keep database rows locked.
 - Generated summaries have a durable database record as well as a Redis cache. Redis failures are ignored safely; the database remains the source of truth.
 - Ranking queries are limited to ten items and use deterministic secondary sorting for ties.
+- Recommendation queries use database aggregation for co-borrow counts and return only compact book-card fields.
 
 ## 4. Setup
 
@@ -147,6 +150,8 @@ Content-Type: application/json
 | Browse books and reviews | Yes | Yes | Yes | Yes |
 | Borrow, return, view own history | No | Yes | Yes | Yes |
 | Create a review / use AI tools | No | Yes | Yes | Yes |
+| Receive personalised recommendations | No | Yes | Yes | Yes |
+| View related and trending recommendations | Yes | Yes | Yes | Yes |
 | Create, edit, delete books | No | No | Yes | Yes |
 | View analytics | No | No | Yes | Yes |
 
@@ -719,7 +724,124 @@ Only users with at least one borrow record are included. `borrow_count` is calcu
 
 Results are ordered by count descending, then genre name.
 
-## 12. Data model and relationships
+## 12. Recommendations app
+
+### What this app does
+
+The recommendations app is a read-only discovery layer. It does not modify books, borrowing records, or reviews. `RecommendationService` contains all ranking logic, while API views only handle access and responses.
+
+Every recommendation endpoint returns a focused book card:
+
+```json
+{
+  "id": 7,
+  "title": "Clean Code",
+  "author": "Robert C. Martin",
+  "genre": "Programming",
+  "average_rating": 4.5,
+  "borrow_count": 12
+}
+```
+
+### Personalised recommendations
+
+`GET /api/recommendations/personalized/` - Authenticated
+
+This endpoint examines the current user's borrowing history, finds their most-read genres, and recommends unborrowed books from those genres. Previously borrowed books are always excluded. The response contains at most ten books, ordered by `average_rating` descending and then `borrow_count` descending. Title and id are stable tie-breakers.
+
+```http
+GET /api/recommendations/personalized/
+Authorization: Bearer <access-token>
+```
+
+Successful response - `200 OK`:
+
+```json
+[
+  {
+    "id": 12,
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt and David Thomas",
+    "genre": "Programming",
+    "average_rating": 4.8,
+    "borrow_count": 92
+  }
+]
+```
+
+A new user with no borrowing history receives a valid empty response:
+
+```json
+[]
+```
+
+### Readers also borrowed
+
+`GET /api/recommendations/also-borrowed/<book_id>/` - Public
+
+This endpoint uses collaborative filtering. It finds every reader who borrowed the selected book and then finds their other borrowed books. The selected book is excluded. The database uses `Count()` to calculate co-borrow frequency, returning up to ten titles ordered by that frequency. Rating, borrow count, title, and id make ties deterministic.
+
+```http
+GET /api/recommendations/also-borrowed/7/
+```
+
+Successful response - `200 OK`:
+
+```json
+[
+  {
+    "id": 15,
+    "title": "Design Patterns",
+    "author": "Erich Gamma, Richard Helm, Ralph Johnson, and John Vlissides",
+    "genre": "Programming",
+    "average_rating": 4.7,
+    "borrow_count": 75
+  },
+  {
+    "id": 18,
+    "title": "Refactoring",
+    "author": "Martin Fowler",
+    "genre": "Programming",
+    "average_rating": 4.6,
+    "borrow_count": 63
+  }
+]
+```
+
+If the selected book exists but has no borrowers, the response is `200 OK` with `[]`. An unknown book returns `404 Not Found`:
+
+```json
+{ "detail": "Book not found." }
+```
+
+### Trending books
+
+`GET /api/recommendations/trending/` - Public
+
+Trending books are ordered by `borrow_count` descending, then `average_rating` descending. The endpoint returns at most ten books and is safe to call without authentication.
+
+```http
+GET /api/recommendations/trending/
+```
+
+Successful response - `200 OK`:
+
+```json
+[
+  {
+    "id": 7,
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "genre": "Programming",
+    "average_rating": 4.5,
+    "borrow_count": 120
+  }
+]
+```
+
+An empty catalogue returns `200 OK` with `[]`.
+
+## 13. Data model and relationships
 
 ```text
 User 1 --- * BorrowRecord * --- 1 Book
@@ -739,9 +861,11 @@ Book 1 --- * BookSummary
 
 Deleting a book or user cascades to its related records according to the configured foreign keys.
 
-## 13. Testing, quality, and production notes
+## 14. Testing, quality, and production notes
 
-The test suite includes request-level coverage for registration and login validation, access rules, catalogue searching/filtering/pagination, invalid inventory, borrow/return states, review uniqueness and ratings, summary caching and retry states, AI failures, and analytics aggregation/ordering.
+The test suite includes request-level coverage for registration and login validation, access rules, catalogue searching/filtering/pagination, invalid inventory, borrow/return states, review uniqueness and ratings, summary caching and retry states, AI failures, analytics aggregation/ordering, and recommendations.
+
+Recommendation tests cover authentication, empty borrowing history, borrowed-book exclusion, result limits, personalised ordering, collaborative co-borrow ranking, empty reader cohorts, public access, trending tie-breaks, and unknown-book `404` handling.
 
 ```bash
 python manage.py test
@@ -750,10 +874,10 @@ python manage.py check
 
 For production, replace development SQLite with PostgreSQL, use managed Redis, set `DEBUG=False`, configure a secure secret key and `ALLOWED_HOSTS`, enforce HTTPS, protect environment secrets, rate-limit login and AI endpoints, add logs/monitoring/backups, and restrict privileged-role registration.
 
-## 14. Known boundaries and planned enhancements
+## 15. Known boundaries and planned enhancements
 
 - Automatic overdue status changes and due-date notifications need a scheduled task or worker.
 - Book availability status is stored separately; borrow/return updates copy counts but does not automatically change this field.
 - Wishlists are represented in the model but do not yet have API endpoints.
-- Review edit/delete, reservations, account administration, recommendations, AI chat, and advanced trend reporting are natural next features.
+- Review edit/delete, reservations, account administration, AI chat, and advanced trend reporting are natural next features.
 - AI output is generated by an external service and should be presented as assistance, not guaranteed factual library metadata.

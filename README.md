@@ -14,6 +14,8 @@ Built with Django and Django REST Framework, the project focuses on the details 
 - **AI reading assistance** — integrates AI to generate multiple summary formats (short and detailed) and assist readers in crafting professional-quality reviews from simple notes and impressions.
 - **Useful library analytics** — staff can see dashboard totals, popular books, top-rated books, active readers, and genre distribution.
 
+- **Personalised discovery** - readers receive suggestions based on borrowing history, related-reader behaviour, and current library popularity.
+
 ## Why it is structured this way
 
 The codebase is organised by business area instead of placing all logic in one application. Each domain—accounts, books, borrowing, reviews, AI summaries, and analytics—owns its models, API views, validation, and tests. This keeps the code easy to understand today and practical to extend tomorrow.
@@ -24,6 +26,52 @@ Client -> API route -> Authentication and role check -> View
 ```
 
 For example, borrowing uses a database transaction and row lock so two people cannot accidentally claim the same final copy at once. AI summaries are stored permanently in the database and cached in Redis, which keeps repeat requests fast while avoiding unnecessary AI calls.
+
+
+
+## API endpoints
+
+### Accounts
+
+- `POST /api/auth/register/` - Create a new reader account.
+- `POST /api/auth/login/` - Sign in and receive JWT tokens.
+- `POST /api/auth/refresh/` - Refresh an expired access token.
+
+### Books
+
+- `GET /api/books/` - Browse searchable, filterable book catalogue.
+- `POST /api/books/` - Add a book to catalogue.
+- `GET /api/books/<id>/` - View complete details for one book.
+- `PUT /api/books/<id>/` - Replace all details for one book.
+- `PATCH /api/books/<id>/` - Update selected details for one book.
+- `DELETE /api/books/<id>/` - Remove a book from catalogue.
+
+### Borrowings
+
+- `POST /api/borrowings/borrow/<book_id>/` - Borrow one available book copy.
+- `POST /api/borrowings/return/<book_id>/` - Return your currently borrowed book.
+- `GET /api/borrowings/history/` - View your complete borrowing history.
+
+### Reviews and AI
+
+- `POST /api/reviews/create/` - Publish your rating and written review.
+- `GET /api/reviews/book/<book_id>/` - Read public reviews for one book.
+- `POST /api/reviews/ai-review/<book_id>/` - Generate an AI-assisted review draft.
+- `POST /api/ai/generate/<book_id>/` - Generate or retrieve AI book summary.
+
+### Analytics
+
+- `GET /api/analytics/dashboard/` - View overall library activity totals.
+- `GET /api/analytics/most-borrowed/` - See ten most borrowed books.
+- `GET /api/analytics/top-rated/` - See ten highest rated books.
+- `GET /api/analytics/active-users/` - See ten most active readers.
+- `GET /api/analytics/genre-distribution/` - View books grouped by genre.
+
+### Recommendations
+
+- `GET /api/recommendations/personalized/` - Receive suggestions matching your borrowing genres.
+- `GET /api/recommendations/also-borrowed/<book_id>/` - Discover books similar readers borrowed.
+- `GET /api/recommendations/trending/` - Browse currently popular library books.
 
 ## Quick start
 

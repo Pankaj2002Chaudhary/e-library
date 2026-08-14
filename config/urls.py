@@ -61,5 +61,9 @@ urlpatterns = [
         "api/analytics/",
         include("analytics.urls")
     ),
+    path(
+        "api/recommendations/",
+        include("recommendations.urls")
+    ),
 
 ]
